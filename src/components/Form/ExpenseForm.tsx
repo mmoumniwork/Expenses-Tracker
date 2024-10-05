@@ -8,20 +8,28 @@ import Table from "../Table/Table";
 const CATEGORIES = ["Food", "Transportation", "Gym", "Entertainment"] as const;
 
 const schema = z.object({
-  description: z.string().min(5),
+  description: z.string().min(2),
   amount: z.number().nonnegative(),
   category: z.enum(CATEGORIES),
 });
 
 type FormData = z.infer<typeof schema>;
 
+interface ExpanseType {
+  filter: "All" | "Food" | "Transportation" | "Gym" | "Entertainment";
+  expanses: FormData[];
+}
+
 function ExpenseForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
-  const [expanses, setExpanses] = useState<FormData[]>([]);
+  const [expanses, setExpanses] = useState<ExpanseType>({
+    filter: "All",
+    expanses: [],
+  });
 
   const submitHandle = (data: FieldValues) => {
     const expanse: FormData = {
@@ -29,14 +37,14 @@ function ExpenseForm() {
       amount: data["amount"],
       category: data["category"],
     };
-    setExpanses([...expanses, expanse]);
+    setExpanses({ filter: expanses.filter, expanses: [...expanses.expanses, expanse] });
   };
 
   const removeExpanse = (index: number) => {
-    const updatedExpanses = expanses.filter((item, itemIndex) => {
+    const updatedExpanses = expanses.expanses.filter((item, itemIndex) => {
       if (index != itemIndex) return item;
     });
-    setExpanses(updatedExpanses);
+    setExpanses({ ...expanses, expanses: updatedExpanses });
   };
 
   return (
@@ -86,12 +94,15 @@ function ExpenseForm() {
           )}
         </div>
 
-        <button disabled={!isValid} type="submit" className="btn btn-primary">
+        <button type="submit" className="btn btn-primary">
           Add
         </button>
       </form>
 
-      <Table expanses={expanses} deleteMethod={removeExpanse}/>
+      <Table
+        expanses={expanses.expanses}
+        deleteMethod={removeExpanse}
+      />
     </>
   );
 }
