@@ -2,14 +2,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import { z } from "zod";
+import "./ExpenseFrom.css";
+import Table from "../Table/Table";
 
 const CATEGORIES = ["Food", "Transportation", "Gym", "Entertainment"] as const;
 
 const schema = z.object({
-  description: z.string().min(15),
+  description: z.string().min(5),
   amount: z.number().nonnegative(),
   category: z.enum(CATEGORIES),
-})
+});
 
 type FormData = z.infer<typeof schema>;
 
@@ -17,21 +19,25 @@ function ExpenseForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid},
-  } = useForm<FormData>({resolver: zodResolver(schema)});
-  const [expanses, setExpanses] = useState([]);
-  
-  
+    formState: { errors, isValid },
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  const [expanses, setExpanses] = useState<FormData[]>([]);
+
   const submitHandle = (data: FieldValues) => {
     const expanse: FormData = {
-      "description": data['description'],
-      "amount": data['amount'],
-      "category": data['category']
-    }
+      description: data["description"],
+      amount: data["amount"],
+      category: data["category"],
+    };
     setExpanses([...expanses, expanse]);
-    console.log(expanses);
   };
 
+  const removeExpanse = (index: number) => {
+    const updatedExpanses = expanses.filter((item, itemIndex) => {
+      if (index != itemIndex) return item;
+    });
+    setExpanses(updatedExpanses);
+  };
 
   return (
     <>
@@ -44,18 +50,22 @@ function ExpenseForm() {
             className="form-control"
             id="description"
           />
-          {errors.description && <p className="text-danger">{errors.description.message}</p>}
+          {errors.description && (
+            <p className="text-danger">{errors.description.message}</p>
+          )}
         </div>
 
         <div className="mb-3">
           <label className="form-label">Amount</label>
           <input
-            {...register("amount", {"valueAsNumber":true})}
+            {...register("amount", { valueAsNumber: true })}
             type="float"
             className="form-control"
             id="amount"
           />
-          {errors.amount && <p className="text-danger">{errors.amount.message}</p>}
+          {errors.amount && (
+            <p className="text-danger">{errors.amount.message}</p>
+          )}
         </div>
 
         <div className="mb-3">
@@ -71,13 +81,17 @@ function ExpenseForm() {
             <option value="Gym">{CATEGORIES[2]}</option>
             <option value="Entertainment">{CATEGORIES[3]}</option>
           </select>
-          {errors.category && <p className="text-danger">{errors.category.message}</p>}
+          {errors.category && (
+            <p className="text-danger">{errors.category.message}</p>
+          )}
         </div>
 
         <button disabled={!isValid} type="submit" className="btn btn-primary">
           Add
         </button>
       </form>
+
+      <Table expanses={expanses} deleteMethod={removeExpanse}/>
     </>
   );
 }
